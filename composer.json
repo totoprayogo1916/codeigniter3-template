@@ -1,0 +1,12 @@
+{
+  "name": "totoprayogo1916/codeigniter3-template",
+  "type": "library",
+  "require": {
+    "codeigniter/framework": "^3.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "Totoprayogo\\Codeigniter3\\": "src/"
+    }
+  }
+}
