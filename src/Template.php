@@ -2,28 +2,29 @@
 
 namespace Totoprayogo\Codeigniter3\Template;
 
-class Template {
-
-    /* default values */
-    private $_template = 'template';
-    private $_parser = FALSE;
-    private $_cache_ttl = 0;
+class Template
+{
+    // default values
+    private $_template    = 'template';
+    private $_parser      = false;
+    private $_cache_ttl   = 0;
     private $_widget_path = '';
-
     private $_ci;
-    private $_partials = array();
+    private $_partials = [];
 
     /**
      * Construct with configuration array. Codeigniter will use the config file otherwise
+     *
      * @param array $config
      */
-    public function __construct($config = array()) {
-        $this->_ci = & get_instance();
+    public function __construct($config = [])
+    {
+        $this->_ci = &get_instance();
 
         // set the default widget path with APPPATH
         $this->_widget_path = APPPATH . 'widgets/';
 
-        if (!empty($config)) {
+        if (! empty($config)) {
             $this->initialize($config);
         }
 
@@ -32,72 +33,88 @@ class Template {
 
     /**
      * Initialize with configuration array
+     *
      * @param array $config
+     *
      * @return Template
      */
-    public function initialize($config = array()) {
+    public function initialize($config = [])
+    {
         foreach ($config as $key => $val) {
             $this->{'_' . $key} = $val;
         }
 
-        if ($this->_widget_path == '') {
+        if ($this->_widget_path === '') {
             $this->_widget_path = APPPATH . 'widgets/';
         }
 
-        if ($this->_parser && !class_exists('CI_Parser')) {
+        if ($this->_parser && ! class_exists('CI_Parser')) {
             $this->_ci->load->library('parser');
         }
     }
 
     /**
      * Set a partial's content. This will create a new partial when not existing
+     *
      * @param string $index
-     * @param mixed $value
+     * @param mixed  $value
+     * @param mixed  $name
      */
-    public function __set($name, $value) {
+    public function __set($name, $value)
+    {
         $this->partial($name)->set($value);
     }
 
     /**
      * Access to partials for method chaining
+     *
      * @param string $name
+     *
      * @return mixed
      */
-    public function __get($name) {
+    public function __get($name)
+    {
         return $this->partial($name);
     }
 
     /**
      * Check if a partial exists
+     *
      * @param string $index
-     * @return boolean
+     *
+     * @return bool
      */
-    public function exists($index) {
+    public function exists($index)
+    {
         return array_key_exists($index, $this->_partials);
     }
 
     /**
      * Set the template file
+     *
      * @param string $template
      */
-    public function set_template($template) {
+    public function set_template($template)
+    {
         $this->_template = $template;
     }
 
     /**
      * Publish the template with the current partials
      * You can manually pass a template file with extra data, or use the default template from the config file
+     *
      * @param string $template
-     * @param array $data
+     * @param array  $data
      */
-    public function publish($template = FALSE, $data = array()) {
+    public function publish($template = false, $data = [])
+    {
         if (is_array($template) || is_object($template)) {
             $data = $template;
-        } else if ($template) {
+        } elseif ($template) {
             $this->_template = $template;
         }
 
-        if (!$this->_template) {
+        if (! $this->_template) {
             show_error('There was no template file selected for the current template');
         }
 
@@ -119,11 +136,14 @@ class Template {
     /**
      * Create a partial object with an optional default content
      * Can be usefull to use straight from the template file
+     *
      * @param string $name
      * @param string $default
+     *
      * @return Partial
      */
-    public function partial($name, $default = FALSE) {
+    public function partial($name, $default = false)
+    {
         if ($this->exists($name)) {
             $partial = $this->_partials[$name];
         } else {
@@ -141,7 +161,7 @@ class Template {
             $this->_partials[$name] = $partial;
         }
 
-        if (!$partial->content() && $default) {
+        if (! $partial->content() && $default) {
             $partial->set($default);
         }
 
@@ -151,26 +171,29 @@ class Template {
     /**
      * Create a widget object with optional parameters
      * Can be usefull to use straight from the template file
+     *
      * @param string $name
-     * @param array $data
+     * @param array  $data
+     *
      * @return Widget
      */
-    public function widget($name, $data = array()) {
+    public function widget($name, $data = [])
+    {
         $class = str_replace('.php', '', trim($name, '/'));
 
         // determine path and widget class name
         $path = $this->_widget_path;
-        if (($last_slash = strrpos($class, '/')) !== FALSE) {
+        if (($last_slash = strrpos($class, '/')) !== false) {
             $path += substr($class, 0, $last_slash);
             $class = substr($class, $last_slash + 1);
         }
 
         // new widget
-        if(!class_exists($class)) {
+        if (! class_exists($class)) {
             // try both lowercase and capitalized versions
-            foreach (array(ucfirst($class), strtolower($class)) as $class) {
+            foreach ([ucfirst($class), strtolower($class)] as $class) {
                 if (file_exists($path . $class . '.php')) {
-                    include_once ($path . $class . '.php');
+                    include_once $path . $class . '.php';
 
                     // found the file, stop looking
                     break;
@@ -178,7 +201,7 @@ class Template {
             }
         }
 
-        if (!class_exists($class)) {
+        if (! class_exists($class)) {
             show_error("Widget '" . $class . "' was not found.");
         }
 
@@ -187,10 +210,12 @@ class Template {
 
     /**
      * Enable cache for all partials with TTL, default TTL is 60
-     * @param int $ttl
+     *
+     * @param int   $ttl
      * @param mixed $identifier
      */
-    public function cache($ttl = 60, $identifier = '') {
+    public function cache($ttl = 60, $identifier = '')
+    {
         foreach ($this->_partials as $partial) {
             $partial->cache($ttl, $identifier);
         }
@@ -202,55 +227,66 @@ class Template {
 
     /**
      * Stylesheet trigger
+     *
      * @param string $source
+     * @param mixed  $url
+     * @param mixed  $attributes
      */
-    public function trigger_stylesheet($url, $attributes = FALSE) {
+    public function trigger_stylesheet($url, $attributes = false)
+    {
         // array support
         if (is_array($url)) {
             $return = '';
+
             foreach ($url as $u) {
                 $return .= $this->trigger_stylesheet($u, $attributes);
             }
+
             return $return;
         }
 
-        if (!stristr($url, 'http://') && !stristr($url, 'https://') && substr($url, 0, 2) != '//') {
+        if (! stristr($url, 'http://') && ! stristr($url, 'https://') && substr($url, 0, 2) !== '//') {
             $url = $this->_ci->config->item('base_url') . $url;
         }
 
         // legacy support for media
         if (is_string($attributes)) {
-            $attributes = array('media' => $attributes);
+            $attributes = ['media' => $attributes];
         }
 
         if (is_array($attributes)) {
-        	$attributeString = "";
+            $attributeString = '';
 
-        	foreach ($attributes as $key => $value) {
-	        	$attributeString .= $key . '="' . $value . '" ';
-        	}
+            foreach ($attributes as $key => $value) {
+                $attributeString .= $key . '="' . $value . '" ';
+            }
 
             return '<link rel="stylesheet" href="' . htmlspecialchars(strip_tags($url)) . '" ' . $attributeString . '>' . "\n\t";
-        } else {
-            return '<link rel="stylesheet" href="' . htmlspecialchars(strip_tags($url)) . '">' . "\n\t";
         }
+
+        return '<link rel="stylesheet" href="' . htmlspecialchars(strip_tags($url)) . '">' . "\n\t";
     }
 
     /**
      * Javascript trigger
+     *
      * @param string $source
+     * @param mixed  $url
      */
-    public function trigger_javascript($url) {
+    public function trigger_javascript($url)
+    {
         // array support
         if (is_array($url)) {
             $return = '';
+
             foreach ($url as $u) {
                 $return .= $this->trigger_javascript($u);
             }
+
             return $return;
         }
 
-        if (!stristr($url, 'http://') && !stristr($url, 'https://') && substr($url, 0, 2) != '//') {
+        if (! stristr($url, 'http://') && ! stristr($url, 'https://') && substr($url, 0, 2) !== '//') {
             $url = $this->_ci->config->item('base_url') . $url;
         }
 
@@ -259,23 +295,26 @@ class Template {
 
     /**
      * Meta trigger
+     *
      * @param string $name
-     * @param mixed $value
-     * @param enum $type
+     * @param mixed  $value
+     * @param enum   $type
      */
-    public function trigger_meta($name, $value, $type = 'meta') {
-        $name = htmlspecialchars(strip_tags($name));
+    public function trigger_meta($name, $value, $type = 'meta')
+    {
+        $name  = htmlspecialchars(strip_tags($name));
         $value = htmlspecialchars(strip_tags($value));
 
-        if ($name == 'keywords' and !strpos($value, ',')) {
+        if ($name === 'keywords' && ! strpos($value, ',')) {
             $content = preg_replace('/[\s]+/', ', ', trim($value));
         }
 
         switch ($type) {
-            case 'meta' :
+            case 'meta':
                 $content = '<meta name="' . $name . '" content="' . $value . '">' . "\n\t";
                 break;
-            case 'link' :
+
+            case 'link':
                 $content = '<link rel="' . $name . '" href="' . $value . '">' . "\n\t";
                 break;
         }
@@ -285,22 +324,27 @@ class Template {
 
     /**
      * Title trigger, keeps it clean
+     *
      * @param string $name
-     * @param mixed $value
-     * @param enum $type
+     * @param mixed  $value
+     * @param enum   $type
+     * @param mixed  $title
      */
-    public function trigger_title($title) {
+    public function trigger_title($title)
+    {
         return htmlspecialchars(strip_tags($title));
     }
 
     /**
      * Title trigger, keeps it clean
+     *
      * @param string $name
-     * @param mixed $value
-     * @param enum $type
+     * @param mixed  $value
+     * @param enum   $type
+     * @param mixed  $description
      */
-    public function trigger_description($description) {
+    public function trigger_description($description)
+    {
         return htmlspecialchars(strip_tags($description));
     }
-
 }
