@@ -6,7 +6,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Totoprayogo\\Codeigniter3\\": "src/"
+      "Totoprayogo\\Codeigniter3\\Template\\": "src/"
     }
   }
 }
