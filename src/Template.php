@@ -1,319 +1,306 @@
 <?php
 
-namespace Totoprayogo\Codeigniter3;
+namespace Totoprayogo\Codeigniter3\Template;
 
 class Template {
 
-    // instancia do codeigniter
-    public $ci;
+    /* default values */
+    private $_template = 'template';
+    private $_parser = FALSE;
+    private $_cache_ttl = 0;
+    private $_widget_path = '';
 
-    // arquivos de css para carregar na página
-    public $css;
+    private $_ci;
+    private $_partials = array();
 
-    // arquivos de js para carregar na página
-    public $js;
+    /**
+     * Construct with configuration array. Codeigniter will use the config file otherwise
+     * @param array $config
+     */
+    public function __construct($config = array()) {
+        $this->_ci = & get_instance();
 
-    // as views que serão carregadas
-    public $views = array();
+        // set the default widget path with APPPATH
+        $this->_widget_path = APPPATH . 'widgets/';
 
-    // modulos para carregar
-    public $modules = array();
+        if (!empty($config)) {
+            $this->initialize($config);
+        }
 
-    // adiciona uma variavel a ser carregada na view
-    public $data = array();
-
-    // pagina a ser carregada
-    public $p_page = 'home';
-
-    // guard
-    public $guard;
-
-    // permissoes
-    public $plano;
-
-    // titulo da pagina
-    public $title = '';
-
-    // método construtor
-    public function __construct() {
-
-        // pega a instancia do ci
-        $this->ci =& get_instance();
-
-        // pega a biblioteca de configuração
-        $this->ci->config->load( 'assets' );
-
-        // pega a biblioteca de guard
-        $this->ci->load->library( 'Guard' );
-        $this->guard = $this->ci->guard;
-
-        // carrega os módulos padrão
-        $this->loadDefault();
+        log_message('debug', 'Template library initialized');
     }
 
     /**
-     * set_title
-     *
-     * Define o titulo da página html
-     *
-     * @param String $title [Titulo da página]
-     * @return void
+     * Initialize with configuration array
+     * @param array $config
+     * @return Template
      */
-    public function set_title( $title ) {
-        $this->title = $title;
-    }
+    public function initialize($config = array()) {
+        foreach ($config as $key => $val) {
+            $this->{'_' . $key} = $val;
+        }
 
-    /**
-     * print_title
-     *
-     * Exibe o titulo atual
-     *
-     * @return void
-     */
-    public function print_title() {
-        echo $this->title;
-    }
+        if ($this->_widget_path == '') {
+            $this->_widget_path = APPPATH . 'widgets/';
+        }
 
-    /**
-     * loadDefault
-     *
-     * carrega os módulos padrão
-     *
-     * @return void
-     */
-    public function loadDefault() {
-
-        // pega os módulos setados no arquivo de configuracao
-        $default = $this->ci->config->item('default');
-
-        // junta com o que já tem guardado
-        $this->modules = array_merge( $this->modules, $default );
-    }
-
-    /**
-     * use_module
-     *
-     * adiciona um novo modulo a ser carregado
-     *
-     * @return void
-     */
-    public function use_module( $module ) {
-
-        // adiciona o módulo
-        $this->modules[] = $module;
-    }
-
-    /**
-     * addCss
-     *
-     * adiciona o css
-     *
-     * @param String $css [SRC to a css file]
-     * @return void
-     */
-    public function addCss( $css ) {
-        $this->css[] = $css;
-    }
-
-    /**
-     * addJs
-     *
-     * adiciona o css
-     *
-     * @param String $js [SRC to a js file]
-     * @return void
-     */
-    public function addJs( $js ) {
-        $this->js[] = $js;
-    }
-
-    /**
-     * view
-     *
-     * adiciona uma nova view
-     *
-     * @param  String
-     * @param  String
-     * @return void
-     */
-    public function view( $chave, $view ) {
-        $this->view[$chave] = $view;
-    }
-
-    /**
-     * set
-     *
-     * seta o valor para uma variavel
-     *
-     * @param String $chave
-     * @param String $valor
-     * @return void
-     */
-    public function set( $chave, $valor ) {
-        $this->data[$chave] = $valor;
-    }
-
-    /**
-     * item
-     *
-     * pega o valor de uma varivel
-     *
-     * @param  String
-     * @return mixed [Retorna o objeto do array indicado pela $chave ou null caso não exista]
-     */
-    public function item( $chave ) {
-        return ( isset( $this->data[$chave] ) ) ? $this->data[$chave] : null;
-    }
-
-    /**
-     * print_view
-     *
-     * Carrega uma view através do nome do seu arquivo
-     *
-     * @param  String $view
-     * @return void
-     */
-    public function print_view( $view ) {
-        $this->ci->load->view( $view );
-    }
-
-    /**
-     * page
-     *
-     * seta a pagina a ser carregada
-     *
-     * @param  String
-     * @return void
-     */
-    public function page( $page ) {
-        $this->p_page = $page;
-    }
-
-    /**
-     * page
-     *
-     * carrega um componente
-     *
-     * @param  String
-     * @param Array $var [Array de dados a serem enviados para a view]
-     * @return void
-     */
-    public function print_component( $component , $var = false) {
-
-        // carrega a pagina
-        $this->ci->load->view( 'components/'.$component, $var);
-    }
-
-    /**
-     * print_page
-     *
-     * Carrega uma view salva em views/pages/[view].php
-     *
-     * @param  String
-     * @return void
-     */
-    public function print_page( $page = false ){
-
-        // verifica se o usuário deseja carregar uma pagina em especifico
-        $this->p_page = $page ? $page : $this->p_page;
-
-        // carrega a pagina
-        $this->ci->load->view( 'pages/'.$this->p_page );
-    }
-
-    /**
-     * loadModules
-     *
-     * Carrega os modulos
-     *
-     * @return void
-     */
-    public function loadModules(){
-
-        // pega os modulos
-        $modules = array_unique( $this->modules );
-
-        // percorre todos os modulos
-        foreach( $modules as $module ) {
-
-            // carrega os arquivos de configuração
-            $config = $this->ci->config->item( $module );
-
-            // verifica se existem css
-            if ( isset( $config['css'] ) ) {
-                foreach ( $config['css'] as $css ) {
-                    $this->addCss( $css );
-                }
-            }
-
-            // verifica se existem js
-            if ( isset( $config['js'] ) ) {
-                foreach ( $config['js'] as $js ) {
-                    $this->addJs( $js );
-                }
-            }
+        if ($this->_parser && !class_exists('CI_Parser')) {
+            $this->_ci->load->library('parser');
         }
     }
 
     /**
-     * print_js
-     *
-     * Imprime o js
-     *
-     * @return void
+     * Set a partial's content. This will create a new partial when not existing
+     * @param string $index
+     * @param mixed $value
      */
-    public function print_js() {
-        if(count($this->js) > 0){
-            foreach( $this->js as $js ) {
-                if(ENVIRONMENT == 'production')
-                echo '<script src="'.$js.'" type="text/javascript"></script>';
-                else{
-                    echo '<script src="'.$js.'?version='.time().'" type="text/javascript"></script>';
-                }
+    public function __set($name, $value) {
+        $this->partial($name)->set($value);
+    }
+
+    /**
+     * Access to partials for method chaining
+     * @param string $name
+     * @return mixed
+     */
+    public function __get($name) {
+        return $this->partial($name);
+    }
+
+    /**
+     * Check if a partial exists
+     * @param string $index
+     * @return boolean
+     */
+    public function exists($index) {
+        return array_key_exists($index, $this->_partials);
+    }
+
+    /**
+     * Set the template file
+     * @param string $template
+     */
+    public function set_template($template) {
+        $this->_template = $template;
+    }
+
+    /**
+     * Publish the template with the current partials
+     * You can manually pass a template file with extra data, or use the default template from the config file
+     * @param string $template
+     * @param array $data
+     */
+    public function publish($template = FALSE, $data = array()) {
+        if (is_array($template) || is_object($template)) {
+            $data = $template;
+        } else if ($template) {
+            $this->_template = $template;
+        }
+
+        if (!$this->_template) {
+            show_error('There was no template file selected for the current template');
+        }
+
+        if (is_array($data) || is_object($data)) {
+            foreach ($data as $name => $content) {
+                $this->partial($name)->set($content);
             }
+        }
+
+        unset($data);
+
+        if ($this->_parser) {
+            $this->_ci->parser->parse($this->_template, $this->_partials);
+        } else {
+            $this->_ci->load->view($this->_template, $this->_partials);
         }
     }
 
     /**
-     * print_css
-     *
-     * Imprime o css
-     *
-     * @return void
+     * Create a partial object with an optional default content
+     * Can be usefull to use straight from the template file
+     * @param string $name
+     * @param string $default
+     * @return Partial
      */
-    public function print_css() {
-        if(count($this->css) > 0){
-            foreach( $this->css as $css ) {
-                if(ENVIRONMENT == 'production'){
-                    echo '<link href="'.$css.'" rel="stylesheet" media="screen"/>';
-                }
-                else{
-                    echo '<link href="'.$css.'?version='.time().'" rel="stylesheet" media="screen"/>';
-                }
-
+    public function partial($name, $default = FALSE) {
+        if ($this->exists($name)) {
+            $partial = $this->_partials[$name];
+        } else {
+            // create new partial
+            $partial = new Partial($name);
+            if ($this->_cache_ttl) {
+                $partial->cache($this->_cache_ttl);
             }
+
+            // detect local triggers
+            if (method_exists($this, 'trigger_' . $name)) {
+                $partial->bind($this, 'trigger_' . $name);
+            }
+
+            $this->_partials[$name] = $partial;
+        }
+
+        if (!$partial->content() && $default) {
+            $partial->set($default);
+        }
+
+        return $partial;
+    }
+
+    /**
+     * Create a widget object with optional parameters
+     * Can be usefull to use straight from the template file
+     * @param string $name
+     * @param array $data
+     * @return Widget
+     */
+    public function widget($name, $data = array()) {
+        $class = str_replace('.php', '', trim($name, '/'));
+
+        // determine path and widget class name
+        $path = $this->_widget_path;
+        if (($last_slash = strrpos($class, '/')) !== FALSE) {
+            $path += substr($class, 0, $last_slash);
+            $class = substr($class, $last_slash + 1);
+        }
+
+        // new widget
+        if(!class_exists($class)) {
+            // try both lowercase and capitalized versions
+            foreach (array(ucfirst($class), strtolower($class)) as $class) {
+                if (file_exists($path . $class . '.php')) {
+                    include_once ($path . $class . '.php');
+
+                    // found the file, stop looking
+                    break;
+                }
+            }
+        }
+
+        if (!class_exists($class)) {
+            show_error("Widget '" . $class . "' was not found.");
+        }
+
+        return new $class($class, $data);
+    }
+
+    /**
+     * Enable cache for all partials with TTL, default TTL is 60
+     * @param int $ttl
+     * @param mixed $identifier
+     */
+    public function cache($ttl = 60, $identifier = '') {
+        foreach ($this->_partials as $partial) {
+            $partial->cache($ttl, $identifier);
+        }
+
+        $this->_cache_ttl = $ttl;
+    }
+
+    // ---- TRIGGERS -----------------------------------------------------------------
+
+    /**
+     * Stylesheet trigger
+     * @param string $source
+     */
+    public function trigger_stylesheet($url, $attributes = FALSE) {
+        // array support
+        if (is_array($url)) {
+            $return = '';
+            foreach ($url as $u) {
+                $return .= $this->trigger_stylesheet($u, $attributes);
+            }
+            return $return;
+        }
+
+        if (!stristr($url, 'http://') && !stristr($url, 'https://') && substr($url, 0, 2) != '//') {
+            $url = $this->_ci->config->item('base_url') . $url;
+        }
+
+        // legacy support for media
+        if (is_string($attributes)) {
+            $attributes = array('media' => $attributes);
+        }
+
+        if (is_array($attributes)) {
+        	$attributeString = "";
+
+        	foreach ($attributes as $key => $value) {
+	        	$attributeString .= $key . '="' . $value . '" ';
+        	}
+
+            return '<link rel="stylesheet" href="' . htmlspecialchars(strip_tags($url)) . '" ' . $attributeString . '>' . "\n\t";
+        } else {
+            return '<link rel="stylesheet" href="' . htmlspecialchars(strip_tags($url)) . '">' . "\n\t";
         }
     }
 
     /**
-     * render
-     *
-     * Renderiza a página escolhida em um layout escolhido (master.php)
-     *
-     * @param  String $layout
-     * @param  String $page
-     * @return void
+     * Javascript trigger
+     * @param string $source
      */
-    public function render( $layout = false, $page = false ) {
+    public function trigger_javascript($url) {
+        // array support
+        if (is_array($url)) {
+            $return = '';
+            foreach ($url as $u) {
+                $return .= $this->trigger_javascript($u);
+            }
+            return $return;
+        }
 
-        // carrega os modulos
-        $this->loadModules();
+        if (!stristr($url, 'http://') && !stristr($url, 'https://') && substr($url, 0, 2) != '//') {
+            $url = $this->_ci->config->item('base_url') . $url;
+        }
 
-        // verifica se o usuário deseja carregar uma pagina em especifico
-        $this->p_page = $page ? $page : $this->p_page;
+        return '<script src="' . htmlspecialchars(strip_tags($url)) . '"></script>' . "\n\t";
+    }
 
-        // carrega a view
-        $this->ci->load->view( $layout, [ 'template' => $this ] );
+    /**
+     * Meta trigger
+     * @param string $name
+     * @param mixed $value
+     * @param enum $type
+     */
+    public function trigger_meta($name, $value, $type = 'meta') {
+        $name = htmlspecialchars(strip_tags($name));
+        $value = htmlspecialchars(strip_tags($value));
+
+        if ($name == 'keywords' and !strpos($value, ',')) {
+            $content = preg_replace('/[\s]+/', ', ', trim($value));
+        }
+
+        switch ($type) {
+            case 'meta' :
+                $content = '<meta name="' . $name . '" content="' . $value . '">' . "\n\t";
+                break;
+            case 'link' :
+                $content = '<link rel="' . $name . '" href="' . $value . '">' . "\n\t";
+                break;
+        }
+
+        return $content;
+    }
+
+    /**
+     * Title trigger, keeps it clean
+     * @param string $name
+     * @param mixed $value
+     * @param enum $type
+     */
+    public function trigger_title($title) {
+        return htmlspecialchars(strip_tags($title));
+    }
+
+    /**
+     * Title trigger, keeps it clean
+     * @param string $name
+     * @param mixed $value
+     * @param enum $type
+     */
+    public function trigger_description($description) {
+        return htmlspecialchars(strip_tags($description));
     }
 
 }
